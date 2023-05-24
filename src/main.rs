@@ -1,7 +1,7 @@
 use std::env;
+use std::error::Error;
 use std::process::Command;
 
-use anyhow::bail;
 use clap::Parser;
 
 #[derive(Parser, Debug)]
@@ -9,17 +9,15 @@ use clap::Parser;
 struct Args {
     #[arg(short, long)]
     environment: Option<String>,
+    #[arg(required = true)]
     command: Vec<String>,
 }
 
-fn main() -> Result<(), anyhow::Error> {
+fn main() -> Result<(), Box<dyn Error>> {
     let args = Args::parse();
 
     let _errors = load_dotenvs_with_default_precedence(&args.environment);
 
-    if args.command.get(0).is_none() {
-        bail!("must provide a command")
-    }
     let mut child = Command::new(&args.command[0])
         .args(&args.command[1..])
         .spawn()?;
@@ -35,8 +33,8 @@ fn main() -> Result<(), anyhow::Error> {
 /// 5. .env
 fn load_dotenvs_with_default_precedence(
     environment: &Option<String>,
-) -> Result<(), Vec<anyhow::Error>> {
-    let mut errors: Vec<anyhow::Error> = Vec::new();
+) -> Result<(), Vec<Box<dyn Error>>> {
+    let mut errors: Vec<Box<dyn Error>> = Vec::new();
 
     let mut load_dotenv_file = |filename: &str| {
         dotenv::from_path(
