@@ -1,3 +1,4 @@
+use std::env;
 use std::process::Command;
 
 use anyhow::bail;
@@ -36,10 +37,15 @@ fn load_dotenvs_with_default_precedence(
     environment: &Option<String>,
 ) -> Result<(), Vec<anyhow::Error>> {
     let mut errors: Vec<anyhow::Error> = Vec::new();
+
     let mut load_dotenv_file = |filename: &str| {
-        dotenv::from_filename(filename)
-            .map_err(|err| errors.push(err.into()))
-            .ok();
+        dotenv::from_path(
+            env::current_dir()
+                .expect("current directory is invalid")
+                .join(filename),
+        )
+        .map_err(|err| errors.push(err.into()))
+        .ok();
     };
 
     // .env.{environment}.local
